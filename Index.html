@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Projeção estereográfica – Sistema cúbico, classe holoédrica (4/m 3̄ 2/m)</title>
+<style>
+:root{
+  --bg:#f6f5f0;--fg:#1c1d1f;--mut:#64666b;--card:#ffffff;--card2:#f0efe9;
+  --ac:#1f5fbf;--ac-soft:rgba(31,95,191,.12);--grid:#b4b8c2;--bd:#d8d6ce;
+  --on:#ffffff;--danger:#c0392b;--ok:#2d6a4f;
+  --p100:#d62828;--p110:#e07a1f;--q4:#7b2cbf;--t3:#2d6a4f;--b2:#8a6d00;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px)
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#131417;--fg:#ececef;--mut:#989a9f;--card:#1c1e23;--card2:#25282f;
+    --ac:#6ea2ff;--ac-soft:rgba(110,162,255,.16);--grid:#454852;--bd:#343740;
+    --on:#0f1115;--danger:#ff7b6b;--ok:#52b788;
+    --p100:#ff595e;--p110:#ff9f1c;--q4:#c77dff;--t3:#52b788;--b2:#ffd166;
+    color-scheme:dark
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131417;--fg:#ececef;--mut:#989a9f;--card:#1c1e23;--card2:#25282f;
+  --ac:#6ea2ff;--ac-soft:rgba(110,162,255,.16);--grid:#454852;--bd:#343740;
+  --on:#0f1115;--danger:#ff7b6b;--ok:#52b788;
+  --p100:#ff595e;--p110:#ff9f1c;--q4:#c77dff;--t3:#52b788;--b2:#ffd166;
+  color-scheme:dark
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.42;padding:14px}
+main{max-width:600px;margin:0 auto}
+
+/* Cabeçalho */
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+h1{font-size:1.12rem;margin:0 0 2px;letter-spacing:-.01em}
+.sub{color:var(--mut);font-size:.84rem;margin:0}
+.toggles{display:flex;gap:6px;flex-shrink:0}
+.icon-btn{font:inherit;font-size:.8rem;padding:6px 10px;border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.icon-btn.active{background:var(--ac-soft);border-color:var(--ac);color:var(--ac);font-weight:600}
+
+/* Navegação e barra de ações */
+.nav-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:38px;margin-bottom:8px;flex-wrap:wrap}
+.crumb{display:flex;gap:6px;align-items:center;font-size:.85rem;color:var(--mut)}
+.crumb button{font:inherit;padding:5px 10px;border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:8px;cursor:pointer}
+.actions{display:flex;gap:6px;margin-left:auto}
+.act-btn{font:inherit;font-size:.83rem;font-weight:500;padding:6px 11px;border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:opacity .15s,background .15s}
+.act-btn:disabled{opacity:.42;cursor:not-allowed}
+.act-btn.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,var(--bd))}
+.act-btn:not(:disabled):active{transform:scale(.98)}
+
+/* Menu de opções */
+.menu{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+.menu button{font:inherit;text-align:left;padding:11px 14px;border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:10px;min-height:46px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;transition:border-color .15s,background .15s}
+.menu button:hover:not(.done){border-color:var(--ac)}
+.menu button.partial{border-color:var(--ac);background:var(--ac-soft)}
+.menu button.done{background:var(--ac);color:var(--on);border-color:var(--ac)}
+.menu button.node::after{content:"›";font-size:1.15rem;color:var(--mut);font-weight:600}
+.btn-main{display:flex;flex-direction:column;gap:2px}
+.btn-sub{font-size:.77rem;opacity:.82}
+.badge{font-size:.76rem;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--card2);color:var(--fg);white-space:nowrap;flex-shrink:0}
+.menu button.partial .badge{background:var(--ac);color:var(--on)}
+.menu button.done .badge{background:rgba(255,255,255,.22);color:var(--on)}
+
+/* Cartão SVG */
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:8px;position:relative}
+svg{display:block;width:100%;height:auto}
+.rim{fill:none;stroke:var(--fg);stroke-width:.012;stroke-dasharray:.03 .025}
+.rim.solid{stroke-dasharray:none}
+.g{stroke:var(--grid);stroke-width:.004}
+.g0{stroke:var(--grid);stroke-width:.008}
+.pl1{stroke:var(--p100);stroke-width:.009;stroke-linecap:round}
+.pl2{stroke:var(--p110);stroke-width:.0085;stroke-linecap:round}
+.ax{stroke:var(--ac);stroke-width:.0085;stroke-dasharray:.03 .02}
+.q4c{fill:var(--q4)}
+.b2c{fill:var(--b2)}
+.t3c{fill:var(--card);stroke:var(--t3);stroke-width:.012}
+.t3dot{fill:var(--t3)}
+.lb{fill:var(--fg);font-weight:600;paint-order:stroke;stroke:var(--card);stroke-width:.016;stroke-linejoin:round}
+.lb-mut{fill:var(--mut);font-weight:500;paint-order:stroke;stroke:var(--card);stroke-width:.015;stroke-linejoin:round}
+
+/* Destaque do último elemento adicionado */
+@keyframes pulseGlow{0%{opacity:.25}50%{opacity:1}100%{opacity:.85}}
+.latest-pulse{animation:pulseGlow 1.1s ease-out}
+
+/* Painel de histórico / detalhes */
+.panel{margin-top:10px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;font-size:.86rem}
+.panel-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:.78rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.chip{font-size:.78rem;padding:3px 8px;border-radius:6px;background:var(--card2);border:1px solid var(--bd);display:inline-flex;align-items:center;gap:5px}
+.chip.last{border-color:var(--ac);background:var(--ac-soft);font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.desc-box{border-top:1px solid var(--bd);padding-top:8px;margin-top:4px}
+.desc-box b{font-weight:600}
+.desc-box span{color:var(--mut);display:block;margin-top:2px;font-size:.83rem}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div>
+      <h1>Projeção estereográfica · Rede de Wulff</h1>
+      <p class="sub">Sistema cúbico, classe holoédrica 4/m 3̄ 2/m (m3̄m)</p>
+    </div>
+    <div class="toggles">
+      <button class="icon-btn active" id="btnLabels" title="Mostrar ou ocultar índices cristalográficos">Índices</button>
+      <button class="icon-btn" id="btnTheme" title="Alternar tema claro/escuro">Tema</button>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <div class="crumb" id="crumb"></div>
+    <div class="actions">
+      <button class="act-btn" id="btnUndo" title="Remover o último elemento projetado">↶ Desfazer</button>
+      <button class="act-btn danger" id="btnClear" title="Limpar toda a projeção">✕ Limpar</button>
+    </div>
+  </div>
+
+  <div class="menu" id="menu"></div>
+
+  <div class="card">
+    <svg id="st" viewBox="-1.22 -1.22 2.44 2.44" role="img" aria-label="Projeção estereográfica"></svg>
+  </div>
+
+  <div class="panel" id="panel"></div>
+</main>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('st');
+const el = (t, a, p) => {
+  const e = document.createElementNS(NS, t);
+  for (const k in a) e.setAttribute(k, a[k]);
+  (p || svg).appendChild(e);
+  return e;
+};
+
+let showLabels = true;
+
+/* Convenção cristalográfica (a,b,c) -> esfera unitária:
+   +b = direita (X), -a = cima (Y_svg), +c = observador (Z) */
+const toQ = v => {
+  const n = Math.hypot(...v);
+  return [v[1]/n, -v[0]/n, v[2]/n];
+};
+const pr = q => {
+  const s = 1 + Math.abs(q[2]);
+  return [q[0]/s, -q[1]/s];
+};
+const cr = (a, b) => [
+  a[1]*b[2] - a[2]*b[1],
+  a[2]*b[0] - a[0]*b[2],
+  a[0]*b[1] - a[1]*b[0]
+];
+const nm = v => {
+  const n = Math.hypot(...v);
+  return v.map(x => x / n);
+};
+
+function path(f, cls, parent) {
+  let d = '', on = false;
+  for (let i = 0; i <= 360; i++) {
+    const q = f(i / 360 * 2 * Math.PI);
+    if (q[2] < -1e-9) { on = false; continue; }
+    const p = pr(q);
+    d += (on ? 'L' : 'M') + p[0].toFixed(4) + ' ' + p[1].toFixed(4);
+    on = true;
+  }
+  return el('path', { d, class: cls, fill: 'none' }, parent);
+}
+
+function drawPlane(n, cls, label, isLatest) {
+  const g = el('g', { class: isLatest ? 'latest-pulse' : '' });
+  const nn = nm(n);
+  if (Math.abs(nn[0]) < 1e-9 && Math.abs(nn[1]) < 1e-9) {
+    // Plano equatorial (001) coincide com o círculo primitivo
+    el('circle', { cx: 0, cy: 0, r: 1, fill: 'none', class: cls }, g);
+    if (showLabels && label) {
+      drawText(0.75, -0.75, label, 'start', 'lb-mut', g);
+    }
+    return;
+  }
+  const i = nn.map(Math.abs).indexOf(Math.min(...nn.map(Math.abs)));
+  const e = [0, 0, 0]; e[i] = 1;
+  const u = nm(cr(nn, e)), v = nm(cr(nn, u));
+  path(t => toQ(u.map((x, k) => Math.cos(t)*x + Math.sin(t)*v[k])), cls, g);
+
+  if (showLabels && label) {
+    // Posiciona o rótulo junto ao ponto médio do arco no hemisfério superior
+    let bestQ = null;
+    for (let k = 0; k < 360; k++) {
+      const t = k * Math.PI / 180;
+      const q = toQ(u.map((x, j) => Math.cos(t)*x + Math.sin(t)*v[j]));
+      if (q[2] >= 0 && (!bestQ || q[2] > bestQ[2])) bestQ = q;
+    }
+    if (bestQ) {
+      const p = pr(bestQ);
+      const r = Math.hypot(p[0], p[1]);
+      if (r < 0.04) {
+        drawText(0.06, -0.06, label, 'start', 'lb-mut', g);
+      } else {
+        drawText(p[0] + (p[0]/r)*0.065, p[1] + (p[1]/r)*0.065, label, 'middle', 'lb-mut', g);
+      }
+    }
+  }
+}
+
+function drawText(x, y, s, anc, cls, parent) {
+  const t = el('text', {
+    x, y,
+    class: cls || 'lb',
+    'text-anchor': anc || 'middle',
+    'dominant-baseline': 'middle',
+    'font-size': 0.068
+  }, parent);
+  t.textContent = s;
+  return t;
+}
+
+/* Símbolos IUCr */
+function symQuad(p, parent) {
+  const s = 0.038;
+  el('rect', { x: p[0]-s, y: p[1]-s, width: 2*s, height: 2*s, class: 'q4c' }, parent);
+}
+function symLens(p, parent) {
+  const a = (p[0] || p[1]) ? Math.atan2(p[1], p[0]) * 180 / Math.PI : 0;
+  el('ellipse', {
+    cx: p[0], cy: p[1], rx: 0.06, ry: 0.023,
+    class: 'b2c',
+    transform: `rotate(${a} ${p[0]} ${p[1]})`
+  }, parent);
+}
+function symTri(p, parent) {
+  const s = 0.058, x = p[0], y = p[1];
+  el('polygon', {
+    points: `${x},${y-s} ${x-0.866*s},${y+0.5*s} ${x+0.866*s},${y+0.5*s}`,
+    class: 't3c'
+  }, parent);
+  el('circle', { cx: x, cy: y, r: 0.014, class: 't3dot' }, parent);
+}
+
+/* Projeta um único eixo de simetria (pode gerar 1 ponto interior ou 2 pontos opostos no primitivo) */
+function drawSymAxis(v, symFn, labelPos, labelNeg, isLatest) {
+  const g = el('g', { class: isLatest ? 'latest-pulse' : '' });
+  const candidates = [
+    { vec: v, lbl: labelPos },
+    { vec: v.map(x => -x), lbl: labelNeg }
+  ];
+  const seen = {};
+  candidates.forEach(({ vec, lbl }) => {
+    const q = toQ(vec);
+    if (q[2] < -1e-9) return;
+    const p = pr(q);
+    const key = p.map(x => x.toFixed(3)).join(',');
+    if (seen[key]) return;
+    seen[key] = true;
+    symFn(p, g);
+    if (showLabels && lbl) {
+      const r = Math.hypot(p[0], p[1]);
+      if (r < 0.03) {
+        drawText(0.08, -0.075, lbl, 'start', 'lb-mut', g);
+      } else {
+        const k = (r + 0.095) / r;
+        drawText(p[0]*k, p[1]*k, lbl, 'middle', 'lb-mut', g);
+      }
+    }
+  });
+}
+
+/* Projeta um eixo cristalográfico individual */
+function drawCrystAxis(v, nm_, isLatest) {
+  const g = el('g', { class: isLatest ? 'latest-pulse' : '' });
+  const q1 = toQ(v), q2 = toQ(v.map(x => -x));
+  const a = pr(q1), b = pr(q2);
+  if (Math.hypot(a[0], a[1]) > 0.01) {
+    el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], class: 'ax' }, g);
+    [[a, '+'], [b, '−']].forEach(([p, sg]) => {
+      const r = Math.hypot(...p), k = 1.11 / r;
+      el('circle', { cx: p[0], cy: p[1], r: 0.028, fill: 'var(--ac)' }, g);
+      drawText(p[0]*k, p[1]*k, sg + nm_, 'middle', 'lb', g);
+    });
+  } else {
+    el('circle', { cx: 0, cy: 0, r: 0.028, fill: 'var(--ac)' }, g);
+    drawText(0.07, -0.065, '+c (↑ obs.)', 'start', 'lb', g);
+    drawText(0.07, 0.065, '−c', 'start', 'lb-mut', g);
+  }
+}
+
+/* Definição dos grupos e dos seus elementos individuais (1 por 1) */
+const GROUPS = {
+  a: {
+    title: 'Eixo cristalográfico [a]',
+    color: 'var(--ac)',
+    items: [
+      { id: 'a_1', code: '[a] = [100]', desc: 'Direção [100]: extremo +a aponta para baixo (observador) e −a para cima.', draw: latest => drawCrystAxis([1,0,0], 'a', latest) }
+    ]
+  },
+  b: {
+    title: 'Eixo cristalográfico [b]',
+    color: 'var(--ac)',
+    items: [
+      { id: 'b_1', code: '[b] = [010]', desc: 'Direção [010]: eixo horizontal com +b à direita e −b à esquerda.', draw: latest => drawCrystAxis([0,1,0], 'b', latest) }
+    ]
+  },
+  c: {
+    title: 'Eixo cristalográfico [c]',
+    color: 'var(--ac)',
+    items: [
+      { id: 'c_1', code: '[c] = [001]', desc: 'Direção [001]: perpendicular ao plano equatorial, projetando-se no centro (+c para o observador).', draw: latest => drawCrystAxis([0,0,1], 'c', latest) }
+    ]
+  },
+  pp: {
+    title: 'Planos de simetria {100}',
+    color: 'var(--p100)',
+    items: [
+      { id: 'pp_1', code: '(100)', desc: 'Plano espelho perpendicular ao eixo [a] (traço horizontal E–W).', draw: latest => drawPlane([1,0,0], 'pl1', '(100)', latest) },
+      { id: 'pp_2', code: '(010)', desc: 'Plano espelho perpendicular ao eixo [b] (traço vertical N–S).', draw: latest => drawPlane([0,1,0], 'pl1', '(010)', latest) },
+      { id: 'pp_3', code: '(001)', desc: 'Plano espelho equatorial perpendicular ao eixo [c] (coincide com o círculo primitivo).', draw: latest => drawPlane([0,0,1], 'pl1', '(001)', latest) }
+    ]
+  },
+  pb: {
+    title: 'Planos de simetria {110}',
+    color: 'var(--p110)',
+    items: [
+      { id: 'pb_1', code: '(110)', desc: 'Plano diagonal vertical que bissecta o ângulo entre +a e +b.', draw: latest => drawPlane([1,1,0], 'pl2', '(110)', latest) },
+      { id: 'pb_2', code: '(11̄0)', desc: 'Plano diagonal vertical perpendicular a (110), bissectando +a e −b.', draw: latest => drawPlane([1,-1,0], 'pl2', '(11̄0)', latest) },
+      { id: 'pb_3', code: '(101)', desc: 'Plano inclinado a 45° que passa pelo eixo [b] e bissecta +a e +c.', draw: latest => drawPlane([1,0,1], 'pl2', '(101)', latest) },
+      { id: 'pb_4', code: '(1̄01)', desc: 'Plano inclinado a 45° que passa pelo eixo [b] e bissecta −a e +c.', draw: latest => drawPlane([-1,0,1], 'pl2', '(1̄01)', latest) },
+      { id: 'pb_5', code: '(011)', desc: 'Plano inclinado a 45° que passa pelo eixo [a] e bissecta +b e +c.', draw: latest => drawPlane([0,1,1], 'pl2', '(011)', latest) },
+      { id: 'pb_6', code: '(01̄1)', desc: 'Plano inclinado a 45° que passa pelo eixo [a] e bissecta −b e +c.', draw: latest => drawPlane([0,-1,1], 'pl2', '(01̄1)', latest) }
+    ]
+  },
+  q4: {
+    title: 'Eixos quaternários giros (4)',
+    color: 'var(--q4)',
+    items: [
+      { id: 'q4_1', code: '4 ∥ [100]', desc: 'Eixo quaternário giro coincidente com o eixo cristalográfico [a] (polos em ±a).', draw: latest => drawSymAxis([1,0,0], symQuad, '[100]', '[1̄00]', latest) },
+      { id: 'q4_2', code: '4 ∥ [010]', desc: 'Eixo quaternário giro coincidente com o eixo cristalográfico [b] (polos em ±b).', draw: latest => drawSymAxis([0,1,0], symQuad, '[010]', '[01̄0]', latest) },
+      { id: 'q4_3', code: '4 ∥ [001]', desc: 'Eixo quaternário giro coincidente com o eixo cristalográfico [c] (polo no centro).', draw: latest => drawSymAxis([0,0,1], symQuad, '[001]', '', latest) }
+    ]
+  },
+  t3: {
+    title: 'Eixos ternários de inversão (3̄)',
+    color: 'var(--t3)',
+    items: [
+      { id: 't3_1', code: '3̄ ∥ [111]', desc: 'Diagonal do cubo no quadrante inferior direito (+a, +b, +c).', draw: latest => drawSymAxis([1,1,1], symTri, '[111]', '', latest) },
+      { id: 't3_2', code: '3̄ ∥ [11̄1]', desc: 'Diagonal do cubo no quadrante inferior esquerdo (+a, −b, +c).', draw: latest => drawSymAxis([1,-1,1], symTri, '[11̄1]', '', latest) },
+      { id: 't3_3', code: '3̄ ∥ [1̄11]', desc: 'Diagonal do cubo no quadrante superior direito (−a, +b, +c).', draw: latest => drawSymAxis([-1,1,1], symTri, '[1̄11]', '', latest) },
+      { id: 't3_4', code: '3̄ ∥ [1̄1̄1]', desc: 'Diagonal do cubo no quadrante superior esquerdo (−a, −b, +c).', draw: latest => drawSymAxis([-1,-1,1], symTri, '[1̄1̄1]', '', latest) }
+    ]
+  },
+  b2: {
+    title: 'Eixos binários giros (2)',
+    color: 'var(--b2)',
+    items: [
+      { id: 'b2_1', code: '2 ∥ [110]', desc: 'Eixo binário equatorial a 45° entre +a e +b (polos opostos no círculo primitivo).', draw: latest => drawSymAxis([1,1,0], symLens, '[110]', '[1̄1̄0]', latest) },
+      { id: 'b2_2', code: '2 ∥ [11̄0]', desc: 'Eixo binário equatorial a 45° entre +a e −b (polos opostos no círculo primitivo).', draw: latest => drawSymAxis([1,-1,0], symLens, '[11̄0]', '[1̄10]', latest) },
+      { id: 'b2_3', code: '2 ∥ [101]', desc: 'Eixo binário no plano vertical N–S inclinado a 45° para +a.', draw: latest => drawSymAxis([1,0,1], symLens, '[101]', '', latest) },
+      { id: 'b2_4', code: '2 ∥ [1̄01]', desc: 'Eixo binário no plano vertical N–S inclinado a 45° para −a.', draw: latest => drawSymAxis([-1,0,1], symLens, '[1̄01]', '', latest) },
+      { id: 'b2_5', code: '2 ∥ [011]', desc: 'Eixo binário no plano horizontal E–W inclinado a 45° para +b.', draw: latest => drawSymAxis([0,1,1], symLens, '[011]', '', latest) },
+      { id: 'b2_6', code: '2 ∥ [01̄1]', desc: 'Eixo binário no plano horizontal E–W inclinado a 45° para −b.', draw: latest => drawSymAxis([0,-1,1], symLens, '[01̄1]', '', latest) }
+    ]
+  }
+};
+
+/* Árvore de navegação */
+const TREE = [
+  {
+    t: 'Eixos cristalográficos',
+    c: [
+      { t: 'Eixo cristalográfico [a]', k: 'a' },
+      { t: 'Eixo cristalográfico [b]', k: 'b' },
+      { t: 'Eixo cristalográfico [c]', k: 'c' }
+    ]
+  },
+  {
+    t: 'Elementos de simetria',
+    c: [
+      {
+        t: 'Planos de simetria (espelhos)',
+        c: [
+          { t: 'Perpendiculares aos eixos cristalográficos {100}', k: 'pp' },
+          { t: 'Bissectores dos planos axiais {110}', k: 'pb' }
+        ]
+      },
+      {
+        t: 'Eixos de simetria',
+        c: [
+          { t: 'Quaternários giros (4)', k: 'q4' },
+          { t: 'Ternários de inversão (3̄)', k: 't3' },
+          { t: 'Binários giros (2)', k: 'b2' }
+        ]
+      }
+    ]
+  }
+];
+
+/* Estado da aplicação:
+   stack = caminho atual no menu
+   history = lista ordenada de passos cumulativos [{ groupKey, itemIndex }] */
+let stack = [];
+let history = [];
+
+const currentNode = () => stack.reduce((n, i) => n.c[i], { c: TREE });
+
+function countInGroup(k) {
+  return history.filter(step => step.groupKey === k).length;
+}
+
+function countInSubtree(node) {
+  if (node.k) return { added: countInGroup(node.k), total: GROUPS[node.k].items.length };
+  return node.c.reduce((acc, child) => {
+    const sub = countInSubtree(child);
+    return { added: acc.added + sub.added, total: acc.total + sub.total };
+  }, { added: 0, total: 0 });
+}
+
+function addNextFromGroup(k) {
+  const grp = GROUPS[k];
+  const usedIndices = new Set(history.filter(s => s.groupKey === k).map(s => s.itemIndex));
+  const nextIdx = grp.items.findIndex((_, idx) => !usedIndices.has(idx));
+  if (nextIdx === -1) return; // Todos os elementos deste grupo já foram projetados
+  history.push({ groupKey: k, itemIndex: nextIdx });
+  render();
+}
+
+function undoLast() {
+  if (!history.length) return;
+  history.pop();
+  render();
+}
+
+function clearAll() {
+  if (!history.length) return;
+  history = [];
+  render();
+}
+
+function drawWulffNet() {
+  for (let p = 0; p < 180; p += 10) {
+    const s = Math.sin(p * Math.PI / 180), c = Math.cos(p * Math.PI / 180);
+    path(t => [Math.sin(t)*s, Math.cos(t), Math.sin(t)*c], p === 0 ? 'g0' : 'g');
+  }
+  for (let l = -80; l <= 80; l += 10) {
+    const c = Math.cos(l * Math.PI / 180), s = Math.sin(l * Math.PI / 180);
+    path(t => [c*Math.sin(t), s, c*Math.cos(t)], l === 0 ? 'g0' : 'g');
+  }
+  const hasEquatorialPlane = history.some(s => s.groupKey === 'pp' && s.itemIndex === 2);
+  el('circle', { cx: 0, cy: 0, r: 1, class: 'rim' + (hasEquatorialPlane ? ' solid' : '') });
+}
+
+function render() {
+  const node = currentNode();
+  const menuEl = document.getElementById('menu');
+  const crumbEl = document.getElementById('crumb');
+  const btnUndo = document.getElementById('btnUndo');
+  const btnClear = document.getElementById('btnClear');
+
+  // Botões Desfazer e Limpar
+  btnUndo.disabled = history.length === 0;
+  btnClear.disabled = history.length === 0;
+  btnUndo.textContent = history.length ? `↶ Desfazer (${history.length})` : '↶ Desfazer';
+
+  // Breadcrumb
+  crumbEl.innerHTML = '';
+  if (stack.length) {
+    const back = document.createElement('button');
+    back.textContent = '‹ Voltar';
+    back.onclick = () => { stack.pop(); render(); };
+    crumbEl.appendChild(back);
+
+    const pathTxt = document.createElement('span');
+    pathTxt.textContent = stack.reduce((acc, i) => {
+      acc.n = acc.n.c[i];
+      acc.s.push(acc.n.t.split(' (')[0]);
+      return acc;
+    }, { n: { c: TREE }, s: [] }).s.join(' › ');
+    crumbEl.appendChild(pathTxt);
+  } else {
+    crumbEl.textContent = 'Selecione uma categoria para projetar 1 a 1';
+  }
+
+  // Menu de opções
+  menuEl.innerHTML = '';
+  node.c.forEach((child, i) => {
+    const b = document.createElement('button');
+    const mainWrap = document.createElement('div');
+    mainWrap.className = 'btn-main';
+
+    const titleSpan = document.createElement('span');
+    titleSpan.textContent = child.t;
+    mainWrap.appendChild(titleSpan);
+
+    const stats = countInSubtree(child);
+    const badge = document.createElement('span');
+    badge.className = 'badge';
+
+    if (child.c) {
+      b.className = 'node';
+      badge.textContent = `${stats.added}/${stats.total}`;
+      b.onclick = () => { stack.push(i); render(); };
+    } else {
+      const grp = GROUPS[child.k];
+      const usedIndices = new Set(history.filter(s => s.groupKey === child.k).map(s => s.itemIndex));
+      const nextIdx = grp.items.findIndex((_, idx) => !usedIndices.has(idx));
+
+      if (nextIdx === -1) {
+        b.className = 'done';
+        badge.textContent = `Completo (${stats.total}/${stats.total})`;
+        const sub = document.createElement('span');
+        sub.className = 'btn-sub';
+        sub.textContent = 'Todos os elementos desta família já estão projetados';
+        mainWrap.appendChild(sub);
+      } else {
+        if (stats.added > 0) b.className = 'partial';
+        badge.textContent = `+1 (${stats.added}/${stats.total})`;
+        const sub = document.createElement('span');
+        sub.className = 'btn-sub';
+        sub.textContent = `Próximo: ${grp.items[nextIdx].code}`;
+        mainWrap.appendChild(sub);
+      }
+      b.onclick = () => addNextFromGroup(child.k);
+    }
+
+    b.appendChild(mainWrap);
+    b.appendChild(badge);
+    menuEl.appendChild(b);
+  });
+
+  // Renderização SVG cumulativa
+  svg.innerHTML = '';
+  drawWulffNet();
+
+  // Ordenar desenho por camadas para clareza visual (planos -> eixos cristalográficos -> eixos de simetria),
+  // mantendo o destaque animado no elemento mais recentemente adicionado
+  const latestStep = history[history.length - 1];
+  const layerOrder = { pp: 1, pb: 2, a: 3, b: 3, c: 3, q4: 4, t3: 4, b2: 4 };
+
+  const sortedSteps = [...history].sort((x, y) => layerOrder[x.groupKey] - layerOrder[y.groupKey]);
+  sortedSteps.forEach(step => {
+    const item = GROUPS[step.groupKey].items[step.itemIndex];
+    const isLatest = step === latestStep;
+    item.draw(isLatest);
+  });
+
+  // Painel de histórico e informação do último passo
+  const panel = document.getElementById('panel');
+  if (!history.length) {
+    panel.innerHTML = `
+      <div class="panel-hdr"><span>Projeção vazia</span><span>0 / 22 elementos</span></div>
+      <span style="color:var(--mut)">Rede de Wulff (meridianos e paralelos de 10° em 10°). Convenção: <b>[c]</b> no centro, <b>[b]</b> à direita, <b>[a]</b> para baixo. Clique nos botões acima para projetar cada eixo ou plano cumulativamente.</span>
+    `;
+  } else {
+    const lastItem = GROUPS[latestStep.groupKey].items[latestStep.itemIndex];
+    const lastColor = GROUPS[latestStep.groupKey].color;
+    const chipsHtml = history.map((step, idx) => {
+      const grp = GROUPS[step.groupKey];
+      const it = grp.items[step.itemIndex];
+      const isLast = idx === history.length - 1;
+      return `<span class="chip ${isLast ? 'last' : ''}" title="${grp.title}: ${it.code}">
+        <span class="dot" style="background:${grp.color}"></span>${idx + 1}. ${it.code}
+      </span>`;
+    }).join('');
+
+    panel.innerHTML = `
+      <div class="panel-hdr">
+        <span>Ordem de projeção</span>
+        <span>${history.length} / 22 projetados</span>
+      </div>
+      <div class="chips">${chipsHtml}</div>
+      <div class="desc-box">
+        <b><span style="color:${lastColor}">●</span> Último adicionado: ${lastItem.code}</b>
+        <span>${lastItem.desc}</span>
+      </div>
+    `;
+  }
+}
+
+/* Eventos globais */
+document.getElementById('btnUndo').onclick = undoLast;
+document.getElementById('btnClear').onclick = clearAll;
+
+document.getElementById('btnLabels').onclick = function () {
+  showLabels = !showLabels;
+  this.classList.toggle('active', showLabels);
+  render();
+};
+
+document.getElementById('btnTheme').onclick = () => {
+  const root = document.documentElement;
+  const isDark = root.getAttribute('data-theme') === 'dark' ||
+    (!root.hasAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+};
+
+render();
+</script>
+</body>
+</html>
